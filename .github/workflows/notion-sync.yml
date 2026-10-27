@@ -4,7 +4,7 @@ on:
     - cron: '0 */6 * * *' # Runs every 6 hours
   push:
     paths:
-      - "**/+notion.txt"
+      - '**/notion.txt'
   workflow_dispatch:
 
 permissions:
