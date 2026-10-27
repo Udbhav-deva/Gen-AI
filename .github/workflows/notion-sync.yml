@@ -2,10 +2,7 @@ name: Sync Notion to Git
 on:
   schedule:
     - cron: '0 */6 * * *' # Runs every 6 hours
-  push:
-    paths:
-      - '**/notion.txt'
-  workflow_dispatch:
+  workflow_dispatch: # Allows you to run it manually at any time
 
 permissions:
   contents: write
@@ -15,9 +12,53 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
         with:
-          fetch-depth: 0
-      - uses: batuhan/notion-sync-action@v1
-        with:
-          notion_token: ${{ secrets.NOTION_TOKEN }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          node-js-version: '20'
+
+      - name: Install Notion to MD Parser
+        run: npm install @notionhq/client notion-to-md
+
+      - name: Download Notes from Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          # REPLACE THE LINK BELOW WITH YOUR ACTUAL NOTION PAGE URL
+          NOTION_PAGE_URL: 'https://app.notion.com/p/Gen-AI-404e2f63c65e80529e57d8883c1bf485'
+        run: |
+          node -e "
+          const { Client } = require('@notionhq/client');
+          const { NotionToMarkdown } = require('notion-to-md');
+          const fs = require('fs');
+
+          const notion = new Client({ auth: process.env.NOTION_TOKEN });
+          const n2m = new NotionToMarkdown({ notionClient: notion });
+
+          async function run() {
+            try {
+              const url = process.env.NOTION_PAGE_URL;
+              const matches = url.match(/[a-f0-9]{32}/);
+              if (!matches) throw new Error('Could not parse a valid Notion Page ID from the URL');
+              const pageId = matches[0];
+              
+              const mdblocks = await n2m.pageToMarkdown(pageId);
+              const mdString = n2m.toMarkdownString(mdblocks);
+              
+              if (!fs.existsSync('notes')) fs.mkdirSync('notes');
+              fs.writeFileSync('notes/my-synced-notes.md', mdString.parent);
+              console.log('Successfully downloaded Notion page!');
+            } catch (err) {
+              console.error(err);
+              process.exit(1);
+            }
+          }
+          run();
+          "
+
+      - name: Commit and Push to Repo
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@://github.com'
+          git add notes/
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update notes from Notion" && git push)
