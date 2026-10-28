@@ -70,6 +70,8 @@ jobs:
               const url = process.env.NOTION_PAGE_URL;
               const matches = url.match(/[a-f0-9]{32}/);
               if (!matches) throw new Error('Could not parse a valid Notion Page ID from the URL');
+              
+              // Correctly extract the first string element from the match array
               const pageId = matches[0];
               
               if (!fs.existsSync('notes')) fs.mkdirSync('notes');
