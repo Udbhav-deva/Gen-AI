@@ -1,8 +1,9 @@
 name: Sync Notion to Git
+
 on:
   schedule:
-    - cron: '0 */6 * * *' # Runs every 6 hours
-  workflow_dispatch: # Allows you to run it manually at any time
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -10,6 +11,7 @@ permissions:
 jobs:
   sync:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -29,69 +31,101 @@ jobs:
           const fs = require('fs');
           const path = require('path');
           const axios = require('axios');
+          const { pipeline } = require('stream/promises');
 
-          const notion = new Client({ auth: process.env.NOTION_TOKEN });
-          const n2m = new NotionToMarkdown({ notionClient: notion });
+          const notion = new Client({
+            auth: process.env.NOTION_TOKEN
+          });
+
+          const n2m = new NotionToMarkdown({
+            notionClient: notion
+          });
 
           let imageCounter = 0;
 
           async function downloadImage(url, dest) {
-            const response = await axios({ url, responseType: 'stream' });
-            return new Promise((resolve, reject) => {
-              response.data.pipe(fs.createWriteStream(dest))
-                .on('finish', () => resolve())
-                .on('error', e => reject(e));
+            const response = await axios({
+              url,
+              responseType: 'stream',
+              timeout: 60000
             });
+
+            await pipeline(
+              response.data,
+              fs.createWriteStream(dest)
+            );
           }
 
           async function handleMediaBlock(block) {
-            try {
-              const type = block.type;
-              const imageUrl = block[type]?.file?.url || block[type]?.external?.url;
-              if (!imageUrl) return '';
+            const type = block.type;
+            const media = block[type];
+            const imageUrl = media?.file?.url || media?.external?.url;
 
-              imageCounter++;
-              const imageName = `image_${imageCounter}_${Date.now()}.png`;
-              const localPath = path.join('notes/images', imageName);
-              const relativePathForMarkdown = path.join('images', imageName);
-
-              console.log(`Downloading media item ${imageCounter}...`);
-              await downloadImage(imageUrl, localPath);
-
-              return `![image](${relativePathForMarkdown})`;
-            } catch (imgErr) {
-              console.error('Failed to download media block:', imgErr.message);
-              return '![image-failed-to-load]()';
+            if (!imageUrl) {
+              throw new Error(`No download URL for ${type} block ${block.id}`);
             }
+
+            imageCounter++;
+            const imageName = `image_${imageCounter}_${Date.now()}.png`;
+
+            // Where the downloaded file is saved in the repository.
+            const localPath = path.join('notes/images', imageName);
+
+            // Where the browser must request it on your GitHub Pages site.
+            const imagePathForWebsite = `/Gen-AI/notes/images/${imageName}`;
+
+            console.log(`Downloading media item ${imageCounter}...`);
+
+            try {
+              await downloadImage(imageUrl, localPath);
+            } catch (err) {
+              throw new Error(
+                `Failed to download ${type} block ${block.id}: ${err.message}`
+              );
+            }
+
+            if (type === 'file') {
+              return `[Download attachment](${imagePathForWebsite})`;
+            }
+
+            return `![image](${imagePathForWebsite})`;
           }
 
           async function run() {
-            try {
-              const url = process.env.NOTION_PAGE_URL;
-              const matches = url.match(/[a-f0-9]{32}/);
-              if (!matches) throw new Error('Could not parse a valid Notion Page ID from the URL');
-              
-              // FIXED: Extracting the actual ID string from the array match
-              const pageId = matches[0];
-              console.log('Target Notion Page ID parsed successfully:', pageId);
-              
-              if (!fs.existsSync('notes')) fs.mkdirSync('notes');
-              if (!fs.existsSync('notes/images')) fs.mkdirSync('notes/images', { recursive: true });
-
-              n2m.setCustomTransformer('image', handleMediaBlock);
-              n2m.setCustomTransformer('file', handleMediaBlock);
-
-              const mdblocks = await n2m.pageToMarkdown(pageId);
-              const mdString = n2m.toMarkdownString(mdblocks);
-              
-              fs.writeFileSync('notes/my-synced-notes.md', mdString.parent);
-              console.log('Successfully downloaded Notion page, images, and file attachments!');
-            } catch (err) {
-              console.error(err);
-              process.exit(1);
+            if (!process.env.NOTION_TOKEN) {
+              throw new Error('NOTION_TOKEN secret is missing');
             }
+
+            const url = process.env.NOTION_PAGE_URL || '';
+            const matches = url.match(/[a-f0-9]{32}/i);
+
+            if (!matches) {
+              throw new Error('Could not parse a valid Notion Page ID from the URL');
+            }
+
+            const pageId = matches[0];
+
+            fs.mkdirSync('notes/images', { recursive: true });
+
+            n2m.setCustomTransformer('image', handleMediaBlock);
+            n2m.setCustomTransformer('file', handleMediaBlock);
+
+            const mdblocks = await n2m.pageToMarkdown(pageId);
+            const mdString = n2m.toMarkdownString(mdblocks);
+
+            fs.writeFileSync(
+              'notes/my-synced-notes.md',
+              mdString.parent,
+              'utf8'
+            );
+
+            console.log('Successfully synced notes and downloaded assets!');
           }
-          run();
+
+          run().catch(err => {
+            console.error(err.message);
+            process.exit(1);
+          });
           EOF
 
       - name: Download Notes and Images from Notion
@@ -102,7 +136,13 @@ jobs:
 
       - name: Commit and Push to Repo
         run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email '41898282+github-actions[bot]@://github.com'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add notes/
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update notes and all assets from Notion" && git push)
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Update notes and assets from Notion"
+            git push
+          fi
