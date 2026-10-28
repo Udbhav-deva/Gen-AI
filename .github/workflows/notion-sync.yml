@@ -16,24 +16,34 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-js-version: '20'
+          node-version: '20'
 
-      - name: Install Notion to MD Parser
-        run: npm install @notionhq/client notion-to-md
+      - name: Install Notion to MD Parser and Axios
+        run: npm install @notionhq/client notion-to-md axios
 
-      - name: Download Notes from Notion
+      - name: Download Notes and Images from Notion
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-          # REPLACE THE LINK BELOW WITH YOUR ACTUAL NOTION PAGE URL
-          NOTION_PAGE_URL: 'https://app.notion.com/p/Gen-AI-404e2f63c65e80529e57d8883c1bf485'
+          NOTION_PAGE_URL: 'https://notion.com'
         run: |
           node -e "
           const { Client } = require('@notionhq/client');
           const { NotionToMarkdown } = require('notion-to-md');
           const fs = require('fs');
+          const path = require('path');
+          const axios = require('axios');
 
           const notion = new Client({ auth: process.env.NOTION_TOKEN });
           const n2m = new NotionToMarkdown({ notionClient: notion });
+
+          async function downloadImage(url, dest) {
+            const response = await axios({ url, responseType: 'stream' });
+            return new Promise((resolve, reject) => {
+              response.data.pipe(fs.createWriteStream(dest))
+                .on('finish', () => resolve())
+                .on('error', e => reject(e));
+            });
+          }
 
           async function run() {
             try {
@@ -42,12 +52,37 @@ jobs:
               if (!matches) throw new Error('Could not parse a valid Notion Page ID from the URL');
               const pageId = matches[0];
               
+              if (!fs.existsSync('notes')) fs.mkdirSync('notes');
+              if (!fs.existsSync('notes/images')) fs.mkdirSync('notes/images', { recursive: true });
+
+              let imageCounter = 0;
+
+              n2m.setCustomTransformer('image', async (block) => {
+                try {
+                  const type = block.type;
+                  const imageUrl = block[type]?.file?.url || block[type]?.external?.url;
+                  if (!imageUrl) return '';
+
+                  imageCounter++;
+                  const imageName = \`image_\${imageCounter}_\${Date.now()}.png\`;
+                  const localPath = path.join('notes/images', imageName);
+                  const relativePathForMarkdown = path.join('images', imageName);
+
+                  console.log(\`Downloading image \${imageCounter}...\\nUrl: \${imageUrl.substring(0, 30)}...\`);
+                  await downloadImage(imageUrl, localPath);
+
+                  return \`![image](\${relativePathForMarkdown})\`;
+                } catch (imgErr) {
+                  console.error('Failed to download image block:', imgErr.message);
+                  return '![image-failed-to-load]()';
+                }
+              });
+
               const mdblocks = await n2m.pageToMarkdown(pageId);
               const mdString = n2m.toMarkdownString(mdblocks);
               
-              if (!fs.existsSync('notes')) fs.mkdirSync('notes');
               fs.writeFileSync('notes/my-synced-notes.md', mdString.parent);
-              console.log('Successfully downloaded Notion page!');
+              console.log('Successfully downloaded Notion page and all images!');
             } catch (err) {
               console.error(err);
               process.exit(1);
@@ -59,6 +94,6 @@ jobs:
       - name: Commit and Push to Repo
         run: |
           git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@://github.com'
+          git config --global user.email '41898282+github-actions[bot]@://github.com'
           git add notes/
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update notes from Notion" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update notes and images from Notion" && git push)
