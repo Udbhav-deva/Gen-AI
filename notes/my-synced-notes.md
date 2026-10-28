@@ -15,7 +15,7 @@ We will first install UV in through the terminal, with the command for windows a
 powershell -ExecutionPolicy ByPass -c "irm [https://astral.sh/uv/install.ps1](https://astral.sh/uv/install.ps1) | iex"
 
 
-![image](/Gen-AI/notes/images/image_1_1793175737169.png)
+![image](https://udbhav-deva.github.io/Gen-AI/notes/images/404e2f63-c65e-808e-8518-fae5c613123e.png)
 
 
 Then comes the step of creating an environment and activating it, the command for creating an environment or a virtual machine is - 
@@ -30,7 +30,7 @@ uv  - -version  (remove the space between the dashes in the terminal)
 uv venv  (for creating a virtual machine)
 
 
-![image](/Gen-AI/notes/images/image_2_1793175737461.png)
+![image](https://udbhav-deva.github.io/Gen-AI/notes/images/404e2f63-c65e-8023-871e-ec2578462a1d.png)
 
 
 Then you have to activate the virtual machine using the same command you can see above in the “Activate with: .venv\scripts\activate”. The command you have to put in the terminal would be whatever written in your terminal after the “Activate with: “ statement, as in my case the command would be : 
@@ -57,19 +57,19 @@ uv init  (this will create a .toml file in your sytem)
 uv add langchain
 
 
-![image](/Gen-AI/notes/images/image_3_1793175737628.png)
+![image](https://udbhav-deva.github.io/Gen-AI/notes/images/404e2f63-c65e-8047-83d2-cb6f89f7770c.png)
 
 
 now to check whether langchain has been installed in our sytem or not, make a new [test.py](http://test.py/) file and run the following code prompt
 
 
-![image](/Gen-AI/notes/images/image_4_1793175737764.png)
+![image](https://udbhav-deva.github.io/Gen-AI/notes/images/404e2f63-c65e-8075-855b-d273a14cf84d.png)
 
 
 which will produce an output as such -
 
 
-![image](/Gen-AI/notes/images/image_5_1793175737891.png)
+![image](https://udbhav-deva.github.io/Gen-AI/notes/images/404e2f63-c65e-80f1-8d3c-e7c249a1e7ed.png)
 
 
 Now, to use a LLM there are 2 ways to do it, either you download it locally or use the API key of the model. Using the model locally could cause you storage issues when the model is big in size for ex- openAI, Anthropic etc.
@@ -89,7 +89,7 @@ GOOGLE_API_KEY = “write your api key here”
     Now, create two folders names as “CHAT MODEL’ and “EMBEDDING MODEL” because that is what we will learn in the first lesson.
 
 
-    ![image](/Gen-AI/notes/images/image_6_1793175738210.png)
+    ![image](https://udbhav-deva.github.io/Gen-AI/notes/images/404e2f63-c65e-8010-ac8a-de8acdea6c02.png)
 
 
 To use the models we will have to download few data of that models locally as well using the API keys, for that make requirements.txt, in that ask chatgpt to make the things that you need to paste in the requirements.txt file, after pasting save the file using ctrl+s, and then in the terminal run the command listed below to download the data about the model so that you can use it - 
@@ -101,14 +101,14 @@ To use the models we will have to download few data of that models locally as we
 uv pip install -r requirements.txt
 
 
-![image](/Gen-AI/notes/images/image_7_1793175738366.png)
+![image](https://udbhav-deva.github.io/Gen-AI/notes/images/404e2f63-c65e-8002-8945-e060db01e6b4.png)
 
 
 After installing requirements you can make a “chat.py” file in the chatModel folder and then in that file you have to write following things
 
 
 
-![image](/Gen-AI/notes/images/image_8_1793175738503.png)
+![image](https://udbhav-deva.github.io/Gen-AI/notes/images/404e2f63-c65e-80cd-bcbf-f21b9325a1e8.png)
 
 
 ```python
@@ -145,25 +145,25 @@ print(response.content)
 Now if you only print(response) the output in the terminal would be as follows - 
 
 
-![image](/Gen-AI/notes/images/image_9_1793175738617.png)
+![image](https://udbhav-deva.github.io/Gen-AI/notes/images/404e2f63-c65e-807c-829c-d323028d03f8.png)
 
 
 Which is quite big and there are a lot of unwanted things in the same. So instead of using print(response) we use print(response.content) to retrieve only the content portion of the output which is as follows - 
 
 
-![image](/Gen-AI/notes/images/image_10_1793175738859.png)
+![image](https://udbhav-deva.github.io/Gen-AI/notes/images/404e2f63-c65e-806e-b4cd-f1ab1117d5ce.png)
 
 
 Now if you don’t want to use “init_chat_model” and you want to use directly a specific model you can change your code to as follows - 
 
 
-![image](/Gen-AI/notes/images/image_11_1793175739028.png)
+![image](https://udbhav-deva.github.io/Gen-AI/notes/images/404e2f63-c65e-80bb-b51e-fde72ca27cc8.png)
 
 
 it’s upto you whether you wanna use init_chat_model or the Model Class. If you want to use any other model class you can retrieve its code syntax from the langchain docs.
 
 
-![image](/Gen-AI/notes/images/image_12_1793175739176.png)
+![image](https://udbhav-deva.github.io/Gen-AI/notes/images/404e2f63-c65e-805a-8b6a-c08a5514f23e.png)
 
 
 the above code contains parameters such as t**emperature** and **max_tokens** these parameters can be used ahead of the model name, the temperature parameters value lies within 0 and 1, as we go towards 1 from 0 for example 0.7 or 0.9, the answer starts getting more creative. Furthermore the parameter max_tokens value sets a limit of spending tokens and hence affects the output.
@@ -190,7 +190,7 @@ Then create the access token through the website and add it into your .env file.
 Now copy a repo id of any model from hugging face for example, I’ve chosen deepseek here
 
 
-![image](/Gen-AI/notes/images/image_13_1793175739453.png)
+![image](https://udbhav-deva.github.io/Gen-AI/notes/images/405e2f63-c65e-80a7-81ef-f3bbdc9dea83.png)
 
 
 the above showed is the repo id in this case.
@@ -256,7 +256,7 @@ print(response.content)
 The output produced for the same is:
 
 
-![image](/Gen-AI/notes/images/image_14_1793175739606.png)
+![image](https://udbhav-deva.github.io/Gen-AI/notes/images/405e2f63-c65e-80e8-867d-dcfe19643bd4.png)
 
 
 # Embedding 
@@ -271,7 +271,7 @@ for embedding, what you have to do is choose an embedding model first, in my cas
 Create an “embedding.py” file in the embedding Model folder you created earlier.
 
 
-![image](/Gen-AI/notes/images/image_15_1793175739784.png)
+![image](https://udbhav-deva.github.io/Gen-AI/notes/images/406e2f63-c65e-8019-93f2-f1e773edce29.png)
 
 
 Then import the langchain requirement for the same and create an embedding variable to call the imported package with the model name and dimensions declared. (dimensions is the max limit only as it was in the case of chat model).
@@ -368,7 +368,7 @@ while True:
 See, how we have used reponse.content above, now I’ll represent you the output of the same.
 
 
-![image](/Gen-AI/notes/images/image_16_1793175739952.png)
+![image](https://udbhav-deva.github.io/Gen-AI/notes/images/406e2f63-c65e-80a9-b77e-d95e0158e91c.png)
 
 
 In the output, **“response.content”** also prints the thinking process of the chatbot, which we of course do not want, so instead of using **“response.content”** we will be using **“response.text”** so that it only prints the text part and not the thinking part of the output too. The same is represented below along with the output.
@@ -395,16 +395,16 @@ while True:
 And the output for the above code is as follows
 
 
-![image](/Gen-AI/notes/images/image_17_1793175740117.png)
+![image](https://udbhav-deva.github.io/Gen-AI/notes/images/406e2f63-c65e-8082-b91f-e614d9af3eca.png)
 
 
 Now, our chatbot right now does not have the feature of saving the chat history or we can say does not have a memory. Now you might think that we can implement a list that store all the chats and henceforth contribute by being a memory, but what if the person chatted for very long time?? the space complexity will keep on increasing only. So to solve this langchain introduced the method **“messages”**, which has three types - 
 
 
-![image](/Gen-AI/notes/images/image_18_1793175740237.png)
+![image](https://udbhav-deva.github.io/Gen-AI/notes/images/406e2f63-c65e-804a-a3e0-eaf416ed0f8b.png)
 
 
-![image](/Gen-AI/notes/images/image_19_1793175740535.png)
+![image](https://udbhav-deva.github.io/Gen-AI/notes/images/406e2f63-c65e-804a-acdb-ec84e4d823b0.png)
 
 
 Now we will use all the above mentioned methods to store the message history in a way that it doesn’t get confusing at all. The code for the same is provided below - 
