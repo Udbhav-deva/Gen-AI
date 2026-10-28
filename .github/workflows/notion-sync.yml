@@ -71,8 +71,9 @@ jobs:
               const matches = url.match(/[a-f0-9]{32}/);
               if (!matches) throw new Error('Could not parse a valid Notion Page ID from the URL');
               
-              // Correctly extract the first string element from the match array
+              // FIXED: Extracting the actual ID string from the array match
               const pageId = matches[0];
+              console.log('Target Notion Page ID parsed successfully:', pageId);
               
               if (!fs.existsSync('notes')) fs.mkdirSync('notes');
               if (!fs.existsSync('notes/images')) fs.mkdirSync('notes/images', { recursive: true });
@@ -96,7 +97,7 @@ jobs:
       - name: Download Notes and Images from Notion
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-          NOTION_PAGE_URL: 'https://notion.com'
+          NOTION_PAGE_URL: 'https://app.notion.com/p/Gen-AI-404e2f63c65e80529e57d8883c1bf485'
         run: node sync.js
 
       - name: Commit and Push to Repo
