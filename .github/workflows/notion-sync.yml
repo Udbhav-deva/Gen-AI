@@ -45,6 +45,29 @@ jobs:
             });
           }
 
+          async function handleMediaBlock(block) {
+            try {
+              const type = block.type;
+              const imageUrl = block[type]?.file?.url || block[type]?.external?.url;
+              if (!imageUrl) return '';
+
+              imageCounter++;
+              const imageName = \`image_\${imageCounter}_\${Date.now()}.png\`;
+              const localPath = path.join('notes/images', imageName);
+              const relativePathForMarkdown = path.join('images', imageName);
+
+              console.log(\`Downloading media \${imageCounter}...\\nUrl: \${imageUrl.substring(0, 30)}...\`);
+              await downloadImage(imageUrl, localPath);
+
+              return \`![image](\${relativePathForMarkdown})\`;
+            } catch (imgErr) {
+              console.error('Failed to download media block:', imgErr.message);
+              return '![image-failed-to-load]()';
+            }
+          }
+
+          let imageCounter = 0;
+
           async function run() {
             try {
               const url = process.env.NOTION_PAGE_URL;
@@ -55,34 +78,15 @@ jobs:
               if (!fs.existsSync('notes')) fs.mkdirSync('notes');
               if (!fs.existsSync('notes/images')) fs.mkdirSync('notes/images', { recursive: true });
 
-              let imageCounter = 0;
-
-              n2m.setCustomTransformer('image', async (block) => {
-                try {
-                  const type = block.type;
-                  const imageUrl = block[type]?.file?.url || block[type]?.external?.url;
-                  if (!imageUrl) return '';
-
-                  imageCounter++;
-                  const imageName = \`image_\${imageCounter}_\${Date.now()}.png\`;
-                  const localPath = path.join('notes/images', imageName);
-                  const relativePathForMarkdown = path.join('images', imageName);
-
-                  console.log(\`Downloading image \${imageCounter}...\\nUrl: \${imageUrl.substring(0, 30)}...\`);
-                  await downloadImage(imageUrl, localPath);
-
-                  return \`![image](\${relativePathForMarkdown})\`;
-                } catch (imgErr) {
-                  console.error('Failed to download image block:', imgErr.message);
-                  return '![image-failed-to-load]()';
-                }
-              });
+              // Intercept both standard image blocks and file/attachment blocks
+              n2m.setCustomTransformer('image', handleMediaBlock);
+              n2m.setCustomTransformer('file', handleMediaBlock);
 
               const mdblocks = await n2m.pageToMarkdown(pageId);
               const mdString = n2m.toMarkdownString(mdblocks);
               
               fs.writeFileSync('notes/my-synced-notes.md', mdString.parent);
-              console.log('Successfully downloaded Notion page and all images!');
+              console.log('Successfully downloaded Notion page, images, and file attachments!');
             } catch (err) {
               console.error(err);
               process.exit(1);
@@ -96,4 +100,4 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email '41898282+github-actions[bot]@://github.com'
           git add notes/
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update notes and images from Notion" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update notes and all assets from Notion" && git push)
