@@ -8,30 +8,35 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: notion-sync
+  cancel-in-progress: false
+
 jobs:
   sync:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Use Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
-      - name: Install Notion to MD Parser and Axios
+      - name: Install dependencies
         run: npm install @notionhq/client notion-to-md axios
 
-      - name: Create Sync Script
+      - name: Create sync script
         run: |
-          cat << 'EOF' > sync.js
+          cat << 'EOF' > sync.cjs
           const { Client } = require('@notionhq/client');
           const { NotionToMarkdown } = require('notion-to-md');
           const fs = require('fs');
           const path = require('path');
           const axios = require('axios');
-          const { pipeline } = require('stream/promises');
+          const { pipeline } = require('node:stream/promises');
 
           const notion = new Client({
             auth: process.env.NOTION_TOKEN
@@ -41,108 +46,121 @@ jobs:
             notionClient: notion
           });
 
-          let imageCounter = 0;
+          const siteUrl = 'https://udbhav-deva.github.io/Gen-AI';
+          let mediaCounter = 0;
 
-          async function downloadImage(url, dest) {
-            const response = await axios({
-              url,
+          async function handleMediaBlock(block) {
+            const media = block[block.type];
+            const url = media?.file?.url || media?.external?.url;
+
+            if (!url) {
+              throw new Error(`Missing media URL for block ${block.id}`);
+            }
+
+            mediaCounter++;
+            console.log(`Downloading media item ${mediaCounter}...`);
+
+            const response = await axios.get(url, {
               responseType: 'stream',
               timeout: 60000
             });
 
+            // Preserve the actual file format rather than naming every file PNG.
+            const contentType = String(
+              response.headers['content-type'] || ''
+            ).split(';')[0].trim().toLowerCase();
+
+            const extensions = {
+              'image/png': '.png',
+              'image/jpeg': '.jpg',
+              'image/gif': '.gif',
+              'image/webp': '.webp',
+              'image/svg+xml': '.svg',
+              'image/avif': '.avif',
+              'image/bmp': '.bmp',
+              'image/tiff': '.tiff',
+              'application/pdf': '.pdf'
+            };
+
+            const urlExtension = path.extname(new URL(url).pathname);
+            const safeExtension = /^\.[a-z0-9]{1,10}$/i.test(urlExtension)
+              ? urlExtension
+              : '.bin';
+
+            const extension = extensions[contentType] || safeExtension;
+            const filename = `${block.id}${extension}`;
+            const destination = path.join('notes', 'images', filename);
+
             await pipeline(
               response.data,
-              fs.createWriteStream(dest)
+              fs.createWriteStream(destination)
             );
-          }
 
-          async function handleMediaBlock(block) {
-            const type = block.type;
-            const media = block[type];
-            const imageUrl = media?.file?.url || media?.external?.url;
+            // Full HTTPS URLs bypass Docsify's relative-path rewriting.
+            const publicUrl = `${siteUrl}/notes/images/${filename}`;
 
-            if (!imageUrl) {
-              throw new Error(`No download URL for ${type} block ${block.id}`);
+            if (block.type === 'image') {
+              return `![image](${publicUrl})`;
             }
 
-            imageCounter++;
-            const imageName = `image_${imageCounter}_${Date.now()}.png`;
-
-            // Where the downloaded file is saved in the repository.
-            const localPath = path.join('notes/images', imageName);
-
-            // Where the browser must request it on your GitHub Pages site.
-            const imagePathForWebsite = `/Gen-AI/notes/images/${imageName}`;
-
-            console.log(`Downloading media item ${imageCounter}...`);
-
-            try {
-              await downloadImage(imageUrl, localPath);
-            } catch (err) {
-              throw new Error(
-                `Failed to download ${type} block ${block.id}: ${err.message}`
-              );
-            }
-
-            if (type === 'file') {
-              return `[Download attachment](${imagePathForWebsite})`;
-            }
-
-            return `![image](${imagePathForWebsite})`;
+            return `[Download attachment](${publicUrl})`;
           }
 
           async function run() {
             if (!process.env.NOTION_TOKEN) {
-              throw new Error('NOTION_TOKEN secret is missing');
+              throw new Error('The NOTION_TOKEN repository secret is missing.');
             }
 
-            const url = process.env.NOTION_PAGE_URL || '';
-            const matches = url.match(/[a-f0-9]{32}/i);
+            const pageUrl = process.env.NOTION_PAGE_URL || '';
+            const match = pageUrl.match(/[a-f0-9]{32}/i);
 
-            if (!matches) {
-              throw new Error('Could not parse a valid Notion Page ID from the URL');
+            if (!match) {
+              throw new Error('Could not extract the Notion page ID.');
             }
-
-            const pageId = matches[0];
 
             fs.mkdirSync('notes/images', { recursive: true });
 
             n2m.setCustomTransformer('image', handleMediaBlock);
             n2m.setCustomTransformer('file', handleMediaBlock);
 
-            const mdblocks = await n2m.pageToMarkdown(pageId);
-            const mdString = n2m.toMarkdownString(mdblocks);
+            const blocks = await n2m.pageToMarkdown(match[0]);
+            const markdown = n2m.toMarkdownString(blocks);
+
+            if (typeof markdown.parent !== 'string') {
+              throw new Error('Notion conversion did not return Markdown.');
+            }
 
             fs.writeFileSync(
               'notes/my-synced-notes.md',
-              mdString.parent,
+              markdown.parent,
               'utf8'
             );
 
-            console.log('Successfully synced notes and downloaded assets!');
+            console.log(`Notes synced successfully with ${mediaCounter} media items.`);
           }
 
-          run().catch(err => {
-            console.error(err.message);
-            process.exit(1);
+          run().catch(error => {
+            console.error(`Sync failed: ${error.message}`);
+            process.exitCode = 1;
           });
           EOF
 
-      - name: Download Notes and Images from Notion
+      - name: Download notes and images
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_PAGE_URL: 'https://app.notion.com/p/Gen-AI-404e2f63c65e80529e57d8883c1bf485'
-        run: node sync.js
+        run: node sync.cjs
 
-      - name: Commit and Push to Repo
+      - name: Commit and push notes
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
           git add notes/
 
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else
-            git commit -m "Update notes and assets from Notion"
+            git commit -m "Sync Notion notes and images"
             git push
           fi
