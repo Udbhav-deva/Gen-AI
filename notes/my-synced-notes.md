@@ -355,7 +355,7 @@ model = ChatGoogleGenerativeAI(
     temperature = 0.9
 )
 
-print("--------------welcome Type 0 to exit---------------")
+print("--------------Welcome! Type 0 to exit---------------")
 while True:
     prompt = input("You : ")
     if prompt == "0":
@@ -382,7 +382,7 @@ model = ChatGoogleGenerativeAI(
     temperature = 0.9
 )
 
-print("--------------welcome Type 0 to exit---------------")
+print("--------------Welcome! Type 0 to exit---------------")
 while True:
     prompt = input("You : ")
     if prompt == "0":
@@ -426,7 +426,7 @@ model = ChatGroq(
     temperature = 0.9
 )
 
-print("--------------welcome Type 0 to exit---------------")
+print("--------------Welcome! Type 0 to exit---------------")
 while True:
     prompt = input("You : ")
     messgaes.append(HumanMessage(content = prompt))
@@ -442,3 +442,8 @@ print(messgaes)
 
 The print(message) in the last is specifically given so that you’ll be able to see the categorization of human, system and AI messages separately.
 
+
+Now there are two types of prompts - 
+
+- **Simple Prompt** - In which you just tell the AI to perform whatever work you have directly. For example - giving the prompt - What is Machine learning?
+- **System + User Prompt** - In this prompt type, you tell the system about its characteristics first or its behavior, then you ask questions to it as the user. For example - You tell the System its behavior as an excellent DSA teacher and as the user you ask the system to teach you about linked lists.
