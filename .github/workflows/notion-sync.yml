@@ -21,12 +21,9 @@ jobs:
       - name: Install Notion to MD Parser and Axios
         run: npm install @notionhq/client notion-to-md axios
 
-      - name: Download Notes and Images from Notion
-        env:
-          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-          NOTION_PAGE_URL: 'https://notion.com'
+      - name: Create Sync Script
         run: |
-          node -e "
+          cat << 'EOF' > sync.js
           const { Client } = require('@notionhq/client');
           const { NotionToMarkdown } = require('notion-to-md');
           const fs = require('fs');
@@ -54,14 +51,14 @@ jobs:
               if (!imageUrl) return '';
 
               imageCounter++;
-              const imageName = \`image_\${imageCounter}_\${Date.now()}.png\`;
+              const imageName = `image_${imageCounter}_${Date.now()}.png`;
               const localPath = path.join('notes/images', imageName);
               const relativePathForMarkdown = path.join('images', imageName);
 
-              console.log(\`Downloading media \${imageCounter}...\\nUrl: \${imageUrl.substring(0, 30)}...\`);
+              console.log(`Downloading media item ${imageCounter}...`);
               await downloadImage(imageUrl, localPath);
 
-              return \`![image](\${relativePathForMarkdown})\`;
+              return `![image](${relativePathForMarkdown})`;
             } catch (imgErr) {
               console.error('Failed to download media block:', imgErr.message);
               return '![image-failed-to-load]()';
@@ -92,7 +89,13 @@ jobs:
             }
           }
           run();
-          "
+          EOF
+
+      - name: Download Notes and Images from Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_PAGE_URL: 'https://notion.com'
+        run: node sync.js
 
       - name: Commit and Push to Repo
         run: |
