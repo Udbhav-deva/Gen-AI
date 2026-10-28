@@ -36,6 +36,8 @@ jobs:
           const notion = new Client({ auth: process.env.NOTION_TOKEN });
           const n2m = new NotionToMarkdown({ notionClient: notion });
 
+          let imageCounter = 0;
+
           async function downloadImage(url, dest) {
             const response = await axios({ url, responseType: 'stream' });
             return new Promise((resolve, reject) => {
@@ -66,8 +68,6 @@ jobs:
             }
           }
 
-          let imageCounter = 0;
-
           async function run() {
             try {
               const url = process.env.NOTION_PAGE_URL;
@@ -78,7 +78,6 @@ jobs:
               if (!fs.existsSync('notes')) fs.mkdirSync('notes');
               if (!fs.existsSync('notes/images')) fs.mkdirSync('notes/images', { recursive: true });
 
-              // Intercept both standard image blocks and file/attachment blocks
               n2m.setCustomTransformer('image', handleMediaBlock);
               n2m.setCustomTransformer('file', handleMediaBlock);
 
