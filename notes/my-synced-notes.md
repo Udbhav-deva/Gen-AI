@@ -447,3 +447,5 @@ Now there are two types of prompts -
 
 - **Simple Prompt** - In which you just tell the AI to perform whatever work you have directly. For example - giving the prompt - What is Machine learning?
 - **System + User Prompt** - In this prompt type, you tell the system about its characteristics first or its behavior, then you ask questions to it as the user. For example - You tell the System its behavior as an excellent DSA teacher and as the user you ask the system to teach you about linked lists.
+- **Prompt Templates -** In this instead of a fixed behavior of the AI which is described in the system message, we let the user choose whether he/she wants the AI to be funny, sad etc.
+- **Structured Output/Prompt** - This is used when we want either JSON output, Bullet Points, Fixed Format.
