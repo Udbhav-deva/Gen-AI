@@ -546,3 +546,6 @@ Now more so ever, if you wanna create an UI for the same you could use chatgpt a
 
 ![image](https://udbhav-deva.github.io/Gen-AI/notes/images/408e2f63-c65e-8085-84c0-e41ac87c8833.png)
 
+
+home i cereateguyguityuhfylkjhfey
+
