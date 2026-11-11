@@ -547,5 +547,20 @@ Now more so ever, if you wanna create an UI for the same you could use chatgpt a
 ![image](https://udbhav-deva.github.io/Gen-AI/notes/images/408e2f63-c65e-8085-84c0-e41ac87c8833.png)
 
 
-home i cereateguyguityuhfylkjhfey
+## Structured Output -
+
+
+Suppose we ask our model to pick out all the noun, verb etc. from a sentence given by the user and it generates an output for the same just the same way listed above. That’s a readable format for a human but python program takes it as a single string.
+
+
+For example, there’s a sentence as such : **The boy plays football.**
+
+
+The python program will take it as : **"Nouns: boy, football\nVerbs: plays”**
+
+
+Now imagine you want to access the nouns separately. That won’t work because the response isn’t a dictionary
+
+
+What we want is the model to follow a predefined structure already
 
