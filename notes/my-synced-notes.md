@@ -564,3 +564,22 @@ Now imagine you want to access the nouns separately. That won’t work because t
 
 What we want is the model to follow a predefined structure already
 
+
+**Structured output means defining the shape of the answer before asking the model to generate it.**
+
+
+### What is a Schema?
+
+
+A schema is a description of what the output should look like. You can think of a schema as a form the model needs to fill in:
+
+
+```plain text
+Nouns:      __________
+Verbs:      __________
+Adjectives: __________
+```
+
+
+But unlike an ordinary form we can also define
+
