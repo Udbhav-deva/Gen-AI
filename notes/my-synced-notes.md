@@ -581,5 +581,8 @@ Adjectives: __________
 ```
 
 
-But unlike an ordinary form we can also define rules about the type of values each field will accept.
+But unlike an ordinary form we can also define rules about the type of values each field will accept. In LangChain, a common way to define such a schema is with **Pydantic**.
+
+
+Pydantic is a Python library that lets you define the structure of data using classes and type annotations. It can then validate data against that structure.
 
