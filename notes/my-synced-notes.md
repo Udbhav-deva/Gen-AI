@@ -581,5 +581,5 @@ Adjectives: __________
 ```
 
 
-But unlike an ordinary form we can also define
+But unlike an ordinary form we can also define rules about the type of values each field will accept.
 
